@@ -11,13 +11,12 @@ import {
   ListResourcesRequestSchema,
   ListResourceTemplatesRequestSchema,
   ReadResourceRequestSchema,
-  // TODO: Replace 'any' typings once SDK exposes proper types
-  SearchRequestSchema,
-  FetchRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { AsanaClientWrapper } from './asana-client-wrapper.js'
+import { z } from "zod";
+import { AsanaClientWrapper } from './asana-client-wrapper.js';
 import { createPromptHandlers } from './prompt-handler.js';
 import { createResourceHandlers } from './resource-handler.js';
+import { searchHandler, fetchHandler } from './connector-handler.js';
 
 async function main() {
   const asanaToken = process.env.ASANA_ACCESS_TOKEN;
@@ -73,18 +72,10 @@ async function main() {
   server.setRequestHandler(ReadResourceRequestSchema, resourceHandlers.readResource);
 
   // Add search and fetch handlers
-  const searchHandler = async (_request: any): Promise<any> => {
-    console.error("Received SearchRequest:", _request);
-    return { items: [] };
-  };
-
-  const fetchHandler = async (_request: any): Promise<any> => {
-    console.error("Received FetchRequest:", _request);
-    return { resource: null };
-  };
-
-  server.setRequestHandler(SearchRequestSchema, searchHandler);
-  server.setRequestHandler(FetchRequestSchema, fetchHandler);
+  const SearchRequestSchema = z.any();
+  const FetchRequestSchema = z.any();
+  server.setRequestHandler(SearchRequestSchema, searchHandler(asanaClient));
+  server.setRequestHandler(FetchRequestSchema, fetchHandler(asanaClient));
 
   const transport = new StdioServerTransport();
   console.error("Connecting server to transport...");
