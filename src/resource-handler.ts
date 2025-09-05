@@ -5,6 +5,7 @@ import {
   ReadResourceRequest
 } from "@modelcontextprotocol/sdk/types.js";
 import { AsanaClientWrapper } from './asana-client-wrapper.js';
+import { formatWorkspace, formatProject, formatCustomFieldSettings } from './utils/asana-format.js';
 
 export function createResourceHandlers(asanaClient: AsanaClientWrapper) {
   /**
@@ -88,13 +89,7 @@ export function createResourceHandlers(asanaClient: AsanaClientWrapper) {
     }
 
     // Format the workspace data
-    const workspaceData = {
-      name: workspace.name,
-      id: workspace.gid,
-      type: workspace.resource_type,
-      is_organization: workspace.is_organization,
-      email_domains: workspace.email_domains,
-    };
+    const workspaceData = formatWorkspace(workspace);
 
     return {
       contents: [
@@ -139,91 +134,14 @@ export function createResourceHandlers(asanaClient: AsanaClientWrapper) {
           opt_fields: "custom_field.name,custom_field.gid,custom_field.resource_type,custom_field.type,custom_field.description,custom_field.enum_options,custom_field.enum_options.gid,custom_field.enum_options.name,custom_field.enum_options.enabled,custom_field.precision,custom_field.format"
         });
 
-        if (customFieldSettings && Array.isArray(customFieldSettings)) {
-          customFields = customFieldSettings
-            .filter((setting: any) => setting && setting.custom_field)
-            .map((setting: any) => {
-              const field = setting.custom_field;
-              let fieldData: any = {
-                gid: field.gid || null,
-                name: field.name || null,
-                type: field.resource_type || null,
-                field_type: field.type || null,
-                description: field.description || null
-              };
-
-              // Add field type specific properties
-              switch (field.type) {
-                case 'enum':
-                  if (field.enum_options && Array.isArray(field.enum_options)) {
-                    fieldData.enum_options = field.enum_options
-                      .filter((option: any) => option.enabled !== false)
-                      .map((option: any) => ({
-                        gid: option.gid || null,
-                        name: option.name || null
-                      }));
-                  }
-                  break;
-                case 'multi_enum':
-                  if (field.enum_options && Array.isArray(field.enum_options)) {
-                    fieldData.enum_options = field.enum_options
-                      .filter((option: any) => option.enabled !== false)
-                      .map((option: any) => ({
-                        gid: option.gid || null,
-                        name: option.name || null
-                      }));
-                  }
-                  break;
-                case 'number':
-                  fieldData.precision = field.precision || 0;
-                  break;
-                case 'text':
-                case 'date':
-                  // No special handling needed
-                  break;
-                case 'people':
-                  // No special handling needed
-                  break;
-              }
-
-              return fieldData;
-            });
-        }
+        customFields = formatCustomFieldSettings(customFieldSettings);
       } catch (customFieldError) {
         console.error(`Error fetching custom fields for project ${projectId}:`, customFieldError);
         // Continue with empty customFields array
       }
 
       // Format project data with sections and custom fields
-      const projectData = {
-        name: project.name || null,
-        id: project.gid || null,
-        type: project.resource_type || null,
-        created_at: project.created_at || null,
-        modified_at: project.modified_at || null,
-        archived: project.archived || false,
-        public: project.public || false,
-        notes: project.notes || null,
-        color: project.color || null,
-        default_view: project.default_view || null,
-        due_date: project.due_date || null,
-        due_on: project.due_on || null,
-        start_on: project.start_on || null,
-        workspace: project.workspace ? {
-          gid: project.workspace.gid || null,
-          name: project.workspace.name || null
-        } : null,
-        team: project.team ? {
-          gid: project.team.gid || null,
-          name: project.team.name || null
-        } : null,
-        sections: sections ? sections.map((section: any) => ({
-          gid: section.gid || null,
-          name: section.name || null,
-          created_at: section.created_at || null
-        })) : [],
-        custom_fields: customFields || []
-      };
+      const projectData = formatProject(project, sections, customFields);
 
       return {
         contents: [

@@ -1,4 +1,5 @@
 import { AsanaClientWrapper } from './asana-client-wrapper.js';
+import { formatProject, formatCustomFieldSettings } from './utils/asana-format.js';
 
 export function searchHandler(asanaClient: AsanaClientWrapper) {
   return async (request: any): Promise<any> => {
@@ -66,14 +67,39 @@ export function fetchHandler(asanaClient: AsanaClientWrapper) {
         }
       };
     } else if (type === 'project') {
-      const project = await asanaClient.getProject(id);
+      const project = await asanaClient.getProject(id, {
+        opt_fields: "name,gid,resource_type,created_at,modified_at,archived,public,notes,color,default_view,due_date,due_on,start_on,workspace,team"
+      });
+
+      let sections = [];
+      try {
+        sections = await asanaClient.getProjectSections(id, {
+          opt_fields: "name,gid,created_at"
+        });
+      } catch (sectionError) {
+        console.error(`Error fetching sections for project ${id}:`, sectionError);
+      }
+
+      let customFields = [];
+      try {
+        const customFieldSettings = await asanaClient.getProjectCustomFieldSettings(id, {
+          opt_fields: "custom_field.name,custom_field.gid,custom_field.resource_type,custom_field.type,custom_field.description,custom_field.enum_options,custom_field.enum_options.gid,custom_field.enum_options.name,custom_field.enum_options.enabled,custom_field.precision,custom_field.format"
+        });
+
+        customFields = formatCustomFieldSettings(customFieldSettings);
+      } catch (customFieldError) {
+        console.error(`Error fetching custom fields for project ${id}:`, customFieldError);
+      }
+
+      const projectData = formatProject(project, sections, customFields);
+
       resource = {
         id: project.gid,
         type: 'project',
         title: project.name,
         content: {
           mimeType: 'application/json',
-          text: JSON.stringify(project, null, 2)
+          text: JSON.stringify(projectData, null, 2)
         }
       };
     } else {
