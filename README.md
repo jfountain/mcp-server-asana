@@ -257,6 +257,57 @@ Another example:
         * due_date (string): Due date for the task (YYYY-MM-DD format)
     * Returns: A detailed prompt with instructions for creating a comprehensive task
 
+## Search and Fetch Endpoints
+
+These endpoints expose Asana data through the MCP search and fetch connector API.
+
+### `/search`
+
+POST requests take the following JSON parameters:
+
+| field | type | description |
+| --- | --- | --- |
+| `type` | string | `task` or `project` |
+| `workspace` | string | Asana workspace GID to search in |
+| `query` | string | text to search for |
+| `page.limit` | number (optional) | maximum items to return |
+| `page.cursor` | string (optional) | pagination cursor from a previous request |
+
+Example `curl` request:
+
+```bash
+curl -X POST http://localhost:3000/search \
+  -H "Content-Type: application/json" \
+  -d '{"type":"task","workspace":"123456789","query":"urgent","page":{"limit":5}}'
+```
+
+Example ChatGPT usage:
+
+> Search Asana tasks in workspace `123456789` for "urgent".
+
+### `/fetch`
+
+POST requests take:
+
+| field | type | description |
+| --- | --- | --- |
+| `id` | string | GID of the resource to retrieve |
+| `type` | string | `task` or `project` |
+
+Example `curl` request:
+
+```bash
+curl -X POST http://localhost:3000/fetch \
+  -H "Content-Type: application/json" \
+  -d '{"type":"task","id":"987654321"}'
+```
+
+Example ChatGPT usage:
+
+> Fetch details for Asana task `987654321`.
+
+No additional environment variables are required beyond `ASANA_ACCESS_TOKEN` (and optional `READ_ONLY_MODE`). Start the server as described in [Setup](#setup) – for quick testing you can run `npm run inspector` which exposes these endpoints on port `3000`.
+
 ## Resources
 
 1. Workspaces - `asana://workspace/{workspace_gid}`
