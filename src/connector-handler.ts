@@ -42,9 +42,44 @@ export function searchHandler(asanaClient: AsanaClientWrapper) {
   };
 }
 
-export function fetchHandler(_asanaClient: AsanaClientWrapper) {
+export function fetchHandler(asanaClient: AsanaClientWrapper) {
   return async (request: any): Promise<any> => {
     console.error("Received FetchRequest:", request);
-    return { resource: null };
+
+    const params = request.params || {};
+    const { id, type } = params;
+
+    if (!id || !type) {
+      throw new Error("Missing required parameters: id or type");
+    }
+
+    let resource: any;
+    if (type === 'task') {
+      const task = await asanaClient.getTask(id);
+      resource = {
+        id: task.gid,
+        type: 'task',
+        title: task.name,
+        content: {
+          mimeType: 'application/json',
+          text: JSON.stringify(task, null, 2)
+        }
+      };
+    } else if (type === 'project') {
+      const project = await asanaClient.getProject(id);
+      resource = {
+        id: project.gid,
+        type: 'project',
+        title: project.name,
+        content: {
+          mimeType: 'application/json',
+          text: JSON.stringify(project, null, 2)
+        }
+      };
+    } else {
+      throw new Error(`Unsupported fetch type: ${type}`);
+    }
+
+    return { resource };
   };
 }
