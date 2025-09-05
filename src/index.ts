@@ -34,7 +34,11 @@ async function main() {
       capabilities: {
         tools: {},
         prompts: {},
-        resources: {}
+        resources: {},
+        connectors: {
+          search: {},
+          fetch: {},
+        }
       },
     }
   );
