@@ -11,6 +11,9 @@ import {
   ListResourcesRequestSchema,
   ListResourceTemplatesRequestSchema,
   ReadResourceRequestSchema,
+  // TODO: Replace 'any' typings once SDK exposes proper types
+  SearchRequestSchema,
+  FetchRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { AsanaClientWrapper } from './asana-client-wrapper.js'
 import { createPromptHandlers } from './prompt-handler.js';
@@ -68,6 +71,20 @@ async function main() {
   server.setRequestHandler(ListResourcesRequestSchema, resourceHandlers.listResources);
   server.setRequestHandler(ListResourceTemplatesRequestSchema, resourceHandlers.listResourceTemplates);
   server.setRequestHandler(ReadResourceRequestSchema, resourceHandlers.readResource);
+
+  // Add search and fetch handlers
+  const searchHandler = async (_request: any): Promise<any> => {
+    console.error("Received SearchRequest:", _request);
+    return { items: [] };
+  };
+
+  const fetchHandler = async (_request: any): Promise<any> => {
+    console.error("Received FetchRequest:", _request);
+    return { resource: null };
+  };
+
+  server.setRequestHandler(SearchRequestSchema, searchHandler);
+  server.setRequestHandler(FetchRequestSchema, fetchHandler);
 
   const transport = new StdioServerTransport();
   console.error("Connecting server to transport...");
